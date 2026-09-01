@@ -3,7 +3,7 @@ name: Deploy calculator v0.2
 on:
   push:
     paths:
-      - '.deploy/delta.b64'
+      - '.deploy/trigger'
 
 permissions:
   contents: write
@@ -20,8 +20,8 @@ jobs:
           from pathlib import Path
           import base64, gzip, hashlib, pickle, random
 
-          payload = base64.b64decode(Path('.deploy/delta.b64').read_bytes())
-          obj = pickle.loads(gzip.decompress(payload))
+          encoded = b''.join(p.read_bytes() for p in sorted(Path('.deploy').glob('chunk_*')))
+          obj = pickle.loads(gzip.decompress(base64.b64decode(encoded)))
           ops = obj['ops']
           literal = obj['literal']
           target = obj['target']
@@ -79,7 +79,7 @@ jobs:
       - name: Commit deployed site
         shell: bash
         run: |
-          rm -f .deploy/delta.b64
+          rm -rf .deploy
           rm -f .github/workflows/deploy-v02.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
